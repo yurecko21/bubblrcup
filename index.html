@@ -507,7 +507,7 @@ async function loadSignups(rebuildGrids = false) {
     return;
   }
   try {
-    const res  = await fetch(`${SHEETS_URL}?action=get`);
+    const res  = await fetch(`${SHEETS_URL}?action=get`, { mode: 'cors' });
     const data = await res.json();
     signups = data.signups || [];
     const note = document.getElementById('syncNote');
@@ -527,6 +527,7 @@ async function saveSignup(entry) {
   try {
     await fetch(SHEETS_URL, {
       method:  'POST',
+      mode:    'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body:    JSON.stringify({ action: 'add', entry }),
     });
@@ -540,6 +541,7 @@ async function deleteSignupRemote(ts) {
   try {
     await fetch(SHEETS_URL, {
       method:  'POST',
+      mode:    'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body:    JSON.stringify({ action: 'delete', ts }),
     });
@@ -850,14 +852,27 @@ function sendConfirmationEmail(email, savedEntries, dollars) {
       </div>`;
   }).join('');
 
+  // Build plain-text player summary for {{player_summary}} variable
+  const playerSummaryText = savedEntries.map(({ player, times }) => {
+    const sessionLines = times.length
+      ? times.map(t => {
+          const gcal    = makeGCalLink(player, t)    || '#';
+          const outlook = makeOutlookLink(player, t) || '#';
+          return `  • ${t.label}\n    📍 ${t.location}\n    Add to Google Calendar: ${gcal}\n    Add to Outlook: ${outlook}`;
+        }).join('\n')
+      : '  No sessions selected.';
+    return `${player}:\n${sessionLines}`;
+  }).join('\n\n');
+
   const templateParams = {
-    to_email:      email,
-    reply_to:      'jeffyurecko@gmail.com',
-    sessions_html: sessionsHtml,
-    total_due:     `$${dollars}`,
-    venmo_handle:  '@yury21',
-    contact_email: 'jeffyurecko@gmail.com',
-    contact_phone: '612-401-9804',
+    to_email:       email,
+    reply_to:       'jeffyurecko@gmail.com',
+    player_summary: playerSummaryText,
+    sessions_html:  sessionsHtml,
+    total_due:      `$${dollars}`,
+    venmo_handle:   '@yury21',
+    contact_email:  'jeffyurecko@gmail.com',
+    contact_phone:  '612-401-9804',
   };
 
   emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
