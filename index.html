@@ -165,6 +165,8 @@
   .parent-email { color: var(--gray); font-size: 0.82rem; }
   .avail-times { display: flex; flex-wrap: wrap; gap: 5px; }
   .avail-pill { background: var(--green-light); color: var(--green-mid); padding: 2px 9px; border-radius: 100px; font-size: 0.78rem; font-weight: 600; white-space: nowrap; }
+  .btn-edit-signup { padding: 4px 10px; background: var(--green-light); color: var(--green); border: none; border-radius: 5px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .btn-edit-signup:hover { background: var(--green-border); }
   .btn-resend { padding: 4px 10px; background: var(--gold-light); color: var(--green); border: none; border-radius: 5px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: background 0.15s; }
   .btn-resend:hover { background: var(--gold); color: var(--white); }
   .btn-delete-row { background: none; border: none; color: #ccc; cursor: pointer; font-size: 1.1rem; padding: 2px 6px; border-radius: 4px; transition: color 0.15s, background 0.15s; }
@@ -374,6 +376,21 @@
       </div>
     </div>
 
+    <!-- Signup Edit Modal -->
+    <div id="signupEditModal" class="edit-modal" style="display:none">
+      <div class="edit-modal-box">
+        <div class="edit-modal-title">✏️ Edit Registration</div>
+        <div id="signupEditPlayer" style="font-size:0.95rem;font-weight:600;color:var(--green);margin-bottom:4px;"></div>
+        <div id="signupEditEmail" style="font-size:0.82rem;color:var(--gray);margin-bottom:16px;"></div>
+        <p style="font-size:0.82rem;color:var(--gray);margin-bottom:12px;">Check or uncheck sessions to add or remove them for this player:</p>
+        <div id="signupEditSessions" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;"></div>
+        <div class="edit-modal-actions">
+          <button class="btn-edit-save" data-action="saveSignupEdit">✓ Save Changes</button>
+          <button class="btn-edit-cancel" data-action="closeSignupEdit">Cancel</button>
+        </div>
+      </div>
+    </div>
+
     <div class="divider"></div>
 
     <!-- SIGN UP FORM -->
@@ -483,7 +500,7 @@ function saveIceTimes() {
 }
 
 // ─── GOOGLE SHEETS SYNC ──────────────────────────────────────────────────
-async function loadSignups() {
+async function loadSignups(rebuildGrids = false) {
   if (SHEETS_URL === 'YOUR_APPS_SCRIPT_URL') {
     const note = document.getElementById('syncNote');
     if (note) note.textContent = '⚠️ Google Sheets not connected yet — add your Apps Script URL to enable live sync.';
@@ -494,10 +511,10 @@ async function loadSignups() {
     const data = await res.json();
     signups = data.signups || [];
     const note = document.getElementById('syncNote');
-    if (note) { note.textContent = `✅ Live — last synced ${new Date().toLocaleTimeString()}`; }
+    if (note) note.textContent = `✅ Live — last synced ${new Date().toLocaleTimeString()}`;
     renderResponses();
     renderSummary();
-    rebuildAllGrids();
+    if (rebuildGrids) rebuildAllGrids();
   } catch (err) {
     console.warn('Could not load signups:', err);
     const note = document.getElementById('syncNote');
@@ -531,8 +548,7 @@ async function deleteSignupRemote(ts) {
   }
 }
 
-// Poll for updates every 30 seconds so roster stays live across devices
-setInterval(loadSignups, 30000);
+// Poll for updates every 30 seconds — called from init after page is ready
 
 // ─── CONSTANTS & HELPERS ─────────────────────────────────────────────────
 const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -667,7 +683,7 @@ function makeTimesGridHTML(childIdx, role) {
           <span class="${ssc}">${sst}</span>
           <span class="${gsc}">${gst}</span>
         </span>
-        <span class="slot-loc">${mapLink(t.location)}</span>
+        <span class="slot-loc" style="margin-top:2px">${mapLink(t.location)}</span>
       </label>
     </div>`;
   }).join('');
@@ -736,6 +752,9 @@ document.addEventListener('click', function(e) {
   if (action === 'closeEdit')    { closeEdit(); return; }
   if (action === 'deleteEdit')   { deleteEdit(); return; }
   if (action === 'openEdit')     { openEdit(idx); return; }
+  if (action === 'openSignupEdit')  { openSignupEdit(idx); return; }
+  if (action === 'closeSignupEdit') { closeSignupEdit(); return; }
+  if (action === 'saveSignupEdit')  { saveSignupEdit(); return; }
   if (action === 'resendICS')    { resendICS(idx); return; }
   if (action === 'deleteSignup') { deleteSignup(idx); return; }
 });
@@ -886,6 +905,7 @@ function renderResponses() {
       <td><div class="avail-times">${s.times.map(t => `<span class="avail-pill">${esc(t.label)}</span>`).join('') || '<span style="color:#aaa;font-size:.8rem">None</span>'}</div></td>
       <td style="white-space:nowrap">${isAdmin ? `
         <button class="btn-resend" data-action="resendICS" data-idx="${i}" title="Re-download calendar">📅</button>
+        <button class="btn-edit-signup" data-action="openSignupEdit" data-idx="${i}" title="Edit sessions">✏️</button>
         <button class="btn-delete-row" data-action="deleteSignup" data-idx="${i}">✕</button>` : ''}
       </td>
     </tr>`).join('');
@@ -1060,6 +1080,10 @@ function submitSignup() {
     savedEntries.push({ player, role, times });
   }
 
+  // Calculate total BEFORE reset
+  const total   = savedEntries.reduce((n, e) => n + e.times.length, 0);
+  const dollars = total * PRICE_PER_SKATE;
+
   // Save + ICS for each player
   for (const { player, role, times } of savedEntries) {
     const entry = { player, role, email, times, ts: new Date().toISOString() };
@@ -1069,8 +1093,6 @@ function submitSignup() {
   }
 
   // Send confirmation email
-  const total   = savedEntries.reduce((n, e) => n + e.times.length, 0);
-  const dollars = total * PRICE_PER_SKATE;
   sendConfirmationEmail(email, savedEntries, dollars);
 
   // Build on-page confirmation
@@ -1125,6 +1147,53 @@ function exportCSV() {
   a.click();
 }
 
+// ─── SIGNUP EDIT ─────────────────────────────────────────────────────────
+let editingSignupIdx = null;
+
+function openSignupEdit(i) {
+  editingSignupIdx = i;
+  const s = signups[i];
+  document.getElementById('signupEditPlayer').textContent = `${s.player} · ${s.role === 'goalie' ? '🥅 Goalie' : '⛸ Skater'}`;
+  document.getElementById('signupEditEmail').textContent  = s.email;
+
+  // Build session checkboxes
+  const container = document.getElementById('signupEditSessions');
+  container.innerHTML = iceTimes.map((t, ti) => {
+    const checked = s.times.some(x => x.label === t.label);
+    return `<label style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1.5px solid #c2d8c9;border-radius:8px;cursor:pointer;font-size:0.88rem;font-weight:600;background:${checked ? 'var(--green)' : 'var(--light-bg)'};color:${checked ? 'white' : 'var(--green)'};">
+      <input type="checkbox" data-time-idx="${ti}" ${checked ? 'checked' : ''} style="width:16px;height:16px;accent-color:var(--gold);" />
+      <span>${esc(t.label)}</span>
+      <span style="font-size:0.72rem;opacity:0.75;">📍 ${esc(t.location)}</span>
+    </label>`;
+  }).join('');
+
+  document.getElementById('signupEditModal').style.display = 'flex';
+}
+
+function closeSignupEdit() {
+  document.getElementById('signupEditModal').style.display = 'none';
+  editingSignupIdx = null;
+}
+
+async function saveSignupEdit() {
+  if (editingSignupIdx === null) return;
+  const checked  = [...document.querySelectorAll('#signupEditSessions input:checked')];
+  const newTimes = checked.map(c => iceTimes[parseInt(c.dataset.timeIdx)]);
+  const original = signups[editingSignupIdx];
+
+  // Update locally
+  signups[editingSignupIdx] = { ...original, times: newTimes };
+
+  // Update remotely — delete old entry, re-add updated with same ts
+  await deleteSignupRemote(original.ts);
+  await saveSignup(signups[editingSignupIdx]);
+
+  closeSignupEdit();
+  renderResponses();
+  renderSummary();
+  rebuildAllGrids();
+}
+
 // ─── ADMIN AUTH ──────────────────────────────────────────────────────────
 function promptAdmin() {
   const pw = prompt('Enter admin password:');
@@ -1143,7 +1212,8 @@ populateTimeSelect('addStart', '07:00');
 populateTimeSelect('addEnd',   '08:00');
 renderAll();
 addChild();
-loadSignups();
+loadSignups(true); // initial load rebuilds grids with live spot counts
+setInterval(() => loadSignups(false), 30000); // poll every 30s without resetting form
 </script>
 </body>
 </html>
