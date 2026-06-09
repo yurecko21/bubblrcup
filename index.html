@@ -484,7 +484,7 @@ function saveIceTimes() {
 
 // ─── GOOGLE SHEETS SYNC ──────────────────────────────────────────────────
 async function loadSignups() {
-  if (SHEETS_URL === 'https://script.google.com/macros/s/AKfycbxpA_qxCeCBVYHDaJHsWirax77DJ1cw98PFA4VEjHldMu-mBvk96OxCCZB4ZJjhAfn7/exec') {
+  if (SHEETS_URL === 'YOUR_APPS_SCRIPT_URL') {
     const note = document.getElementById('syncNote');
     if (note) note.textContent = '⚠️ Google Sheets not connected yet — add your Apps Script URL to enable live sync.';
     return;
@@ -506,7 +506,7 @@ async function loadSignups() {
 }
 
 async function saveSignup(entry) {
-  if (SHEETS_URL === 'https://script.google.com/macros/s/AKfycbxpA_qxCeCBVYHDaJHsWirax77DJ1cw98PFA4VEjHldMu-mBvk96OxCCZB4ZJjhAfn7/exec') return;
+  if (SHEETS_URL === 'YOUR_APPS_SCRIPT_URL') return;
   try {
     await fetch(SHEETS_URL, {
       method:  'POST',
@@ -519,7 +519,7 @@ async function saveSignup(entry) {
 }
 
 async function deleteSignupRemote(ts) {
-  if (SHEETS_URL === 'https://script.google.com/macros/s/AKfycbxpA_qxCeCBVYHDaJHsWirax77DJ1cw98PFA4VEjHldMu-mBvk96OxCCZB4ZJjhAfn7/exec') return;
+  if (SHEETS_URL === 'YOUR_APPS_SCRIPT_URL') return;
   try {
     await fetch(SHEETS_URL, {
       method:  'POST',
