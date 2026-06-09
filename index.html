@@ -500,16 +500,24 @@ function saveIceTimes() {
 }
 
 // ─── GOOGLE SHEETS SYNC ──────────────────────────────────────────────────
+let lastSuccessfulSync = 0;
+
 async function loadSignups(rebuildGrids = false) {
   if (SHEETS_URL === 'YOUR_APPS_SCRIPT_URL') {
     const note = document.getElementById('syncNote');
     if (note) note.textContent = '⚠️ Google Sheets not connected yet — add your Apps Script URL to enable live sync.';
     return;
   }
+  // Don't poll within 5 seconds of a submission — give Sheets time to save first
+  if (Date.now() - lastSuccessfulSync < 5000) return;
   try {
     const res  = await fetch(`${SHEETS_URL}?action=get`, { mode: 'cors' });
     const data = await res.json();
-    signups = data.signups || [];
+    const incoming = data.signups || [];
+    // Only replace local signups if Sheets returned data, OR local list is already empty
+    if (incoming.length > 0 || signups.length === 0) {
+      signups = incoming;
+    }
     const note = document.getElementById('syncNote');
     if (note) note.textContent = `✅ Live — last synced ${new Date().toLocaleTimeString()}`;
     renderResponses();
@@ -1109,6 +1117,9 @@ function submitSignup() {
     saveSignup(entry);
     downloadICS(player, times);
   }
+
+  // Pause polling briefly so Sheets has time to save before next load
+  lastSuccessfulSync = Date.now();
 
   // Send confirmation email
   sendConfirmationEmail(email, savedEntries, dollars);
