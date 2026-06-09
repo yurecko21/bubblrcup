@@ -525,12 +525,8 @@ async function loadSignups(rebuildGrids = false) {
 async function saveSignup(entry) {
   if (SHEETS_URL === 'YOUR_APPS_SCRIPT_URL') return;
   try {
-    await fetch(SHEETS_URL, {
-      method:  'POST',
-      mode:    'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body:    JSON.stringify({ action: 'add', entry }),
-    });
+    const url = `${SHEETS_URL}?action=add&entry=${encodeURIComponent(JSON.stringify(entry))}`;
+    await fetch(url, { mode: 'no-cors' });
   } catch (err) {
     console.warn('Could not save signup:', err);
   }
@@ -539,12 +535,8 @@ async function saveSignup(entry) {
 async function deleteSignupRemote(ts) {
   if (SHEETS_URL === 'YOUR_APPS_SCRIPT_URL') return;
   try {
-    await fetch(SHEETS_URL, {
-      method:  'POST',
-      mode:    'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body:    JSON.stringify({ action: 'delete', ts }),
-    });
+    const url = `${SHEETS_URL}?action=delete&ts=${encodeURIComponent(ts)}`;
+    await fetch(url, { mode: 'no-cors' });
   } catch (err) {
     console.warn('Could not delete signup:', err);
   }
@@ -875,9 +867,20 @@ function sendConfirmationEmail(email, savedEntries, dollars) {
     contact_phone:  '612-401-9804',
   };
 
-  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
-    .then(() => console.log('Confirmation email sent.'))
-    .catch(err => console.warn('EmailJS error:', err));
+  // Delay on Safari: the ICS download can abort fetch requests if fired at same time
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  setTimeout(() => {
+    emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
+      .then(() => console.log('Confirmation email sent.'))
+      .catch(err => {
+        console.warn('EmailJS first attempt failed, retrying...', err);
+        setTimeout(() => {
+          emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
+            .then(() => console.log('Confirmation email sent (retry).'))
+            .catch(e => console.warn('EmailJS retry failed:', e));
+        }, 2000);
+      });
+  }, isSafari ? 1500 : 0);
 }
 
 // ─── ICS ─────────────────────────────────────────────────────────────────
