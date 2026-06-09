@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>12U BUBBL'R Cup Series – Sign-Up</title>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@800;900&family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green:       #005826;
+    --green-mid:   #006e30;
+    --green-light: #e6f2eb;
+    --green-border:#a8d4b5;
+    --gold:        #c9a227;
+    --gold-light:  #f5eabc;
+    --gold-dark:   #a88318;
+    --white:       #ffffff;
+    --gray:        #5a6a5e;
+    --light-bg:    #f2f7f4;
+    --red:         #b03a2e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Barlow', sans-serif; background: var(--green); min-height: 100vh; color: var(--green); }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background:
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 40px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 80px);
+    pointer-events: none; z-index: 0;
+  }
+  .page-wrap { position: relative; z-index: 1; max-width: 880px; margin: 0 auto; padding: 32px 16px 64px; }
+
+  /* HEADER */
+  header { text-align: center; margin-bottom: 36px; animation: fadeDown 0.5s ease both; }
+  .logo-svg { width: 110px; height: 100px; margin-bottom: 10px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5)); }
+  header h1 { font-family: 'Nunito', sans-serif; font-size: clamp(2.2rem, 7vw, 4rem); font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em; color: var(--white); line-height: 1; }
+  header h1 .apos { color: var(--gold); }
+  header h1 .cup  { color: var(--gold); }
+  header p { margin-top: 10px; color: var(--green-border); font-size: 1rem; font-weight: 500; }
+
+  /* CARD */
+  .card { background: var(--white); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 48px rgba(0,0,0,0.35); animation: fadeUp 0.5s ease 0.1s both; }
+
+  /* ADMIN BAR */
+  .admin-bar { background: var(--green-mid); padding: 16px 24px; display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .admin-bar > label { color: var(--green-border); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; flex-shrink: 0; padding-top: 24px; }
+  .admin-inputs { display: flex; flex-wrap: wrap; gap: 10px; flex: 1; align-items: flex-end; }
+  .admin-field { display: flex; flex-direction: column; gap: 4px; }
+  .admin-field-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: rgba(255,255,255,0.6); }
+  .admin-field select, .admin-field input[type="date"], .admin-field input[type="text"] {
+    padding: 7px 10px; border-radius: 6px; border: none; font-size: 0.88rem;
+    font-family: 'Barlow', sans-serif; background: rgba(255,255,255,0.15); color: white;
+  }
+  .admin-field select option { background: var(--green); }
+  .admin-field input[type="date"] { color-scheme: dark; }
+  .admin-field input::placeholder { color: rgba(255,255,255,0.4); }
+  .custom-time-input { margin-top: 4px; padding: 6px 10px; border-radius: 6px; border: none; font-size: 0.88rem; font-family: 'Barlow', sans-serif; background: rgba(255,255,255,0.15); color: white; width: 100%; }
+  .custom-time-input::placeholder { color: rgba(255,255,255,0.4); }
+  .edit-modal-fields .custom-time-input { background: var(--light-bg); color: var(--green); border: 1.5px solid #c2d8c9; margin-top: 4px; }
+  .btn-add-time { align-self: flex-end; padding: 8px 18px; background: var(--gold); color: var(--green); border: none; border-radius: 6px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: background 0.15s, transform 0.1s; white-space: nowrap; }
+  .btn-add-time:hover { background: var(--gold-dark); transform: translateY(-1px); }
+
+  /* EDIT MODAL */
+  .edit-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .edit-modal-box { background: var(--white); border-radius: 14px; padding: 24px; max-width: 540px; width: 100%; box-shadow: 0 16px 48px rgba(0,0,0,0.3); }
+  .edit-modal-title { font-family: 'Barlow Condensed', sans-serif; font-size: 1.2rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--green); margin-bottom: 16px; }
+  .edit-modal-fields { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+  .edit-modal-fields .admin-field select,
+  .edit-modal-fields .admin-field input { background: var(--light-bg); color: var(--green); border: 1.5px solid #c2d8c9; padding: 8px 10px; border-radius: 7px; }
+  .edit-modal-fields .admin-field select option { background: var(--white); color: var(--green); }
+  .edit-modal-fields .admin-field-label { color: var(--gray); }
+  .edit-modal-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn-edit-save { padding: 10px 20px; background: var(--green); color: white; border: none; border-radius: 8px; font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; font-weight: 700; text-transform: uppercase; cursor: pointer; transition: background 0.15s; }
+  .btn-edit-save:hover { background: var(--green-mid); }
+  .btn-edit-cancel { padding: 10px 20px; background: var(--light-bg); color: var(--gray); border: 1.5px solid #c2d8c9; border-radius: 8px; font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; font-weight: 700; text-transform: uppercase; cursor: pointer; }
+  .btn-edit-delete { padding: 10px 20px; background: #ffeaea; color: var(--red); border: none; border-radius: 8px; font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; font-weight: 700; text-transform: uppercase; cursor: pointer; margin-left: auto; }
+  .btn-edit-delete:hover { background: var(--red); color: white; }
+
+  /* TIME CHIPS — clickable in admin */
+  .time-chip { display: flex; align-items: center; gap: 6px; background: var(--green); color: var(--white); padding: 6px 14px; border-radius: 100px; font-size: 0.82rem; font-weight: 600; animation: pop 0.2s ease; cursor: pointer; transition: background 0.15s; }
+  .time-chip:hover { background: var(--green-mid); }
+  .time-chip .loc { color: var(--gold); font-size: 0.72rem; font-weight: 500; }
+  .no-times { color: var(--gray); font-size: 0.88rem; font-style: italic; }
+
+  /* ICE TIMES LIST */
+  .times-manager { padding: 20px 24px; background: var(--light-bg); border-bottom: 2px solid var(--green-border); }
+  .times-manager h2 { font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--green-mid); margin-bottom: 12px; }
+  .time-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  /* SIGN UP FORM */
+  .signup-section { padding: 28px 24px; border-bottom: 1px solid #dde8e2; }
+  .signup-section > h2 { font-family: 'Barlow Condensed', sans-serif; font-size: 1.35rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--green); margin-bottom: 18px; }
+  .form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; align-items: flex-end; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 180px; }
+  .form-group label { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--gray); }
+  .form-group input[type="text"],
+  .form-group input[type="email"] { padding: 10px 14px; border: 2px solid #c2d8c9; border-radius: 8px; font-size: 1rem; font-family: 'Barlow', sans-serif; color: var(--green); transition: border-color 0.15s; outline: none; }
+  .form-group input:focus { border-color: var(--green-mid); }
+
+  /* CHILD ENTRIES */
+  .child-entry { background: var(--light-bg); border: 1.5px solid var(--green-border); border-radius: 12px; padding: 16px 18px; margin-bottom: 14px; }
+  .child-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .child-label { font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--green); }
+  .btn-remove-child { background: none; border: 1.5px solid #c2d8c9; color: var(--gray); border-radius: 6px; padding: 4px 10px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .btn-remove-child:hover { border-color: var(--red); color: var(--red); background: #ffeaea; }
+  .btn-add-child { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 18px; padding: 10px 18px; background: var(--white); border: 2px dashed var(--green-border); border-radius: 10px; color: var(--green-mid); font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; cursor: pointer; width: 100%; transition: all 0.15s; }
+  .btn-add-child:hover { border-color: var(--green); background: var(--green-light); color: var(--green); }
+
+  /* TIME SLOT CHECKBOXES */
+  .times-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; margin-bottom: 4px; }
+  .time-option { position: relative; }
+  .time-option input[type="checkbox"] { position: absolute; opacity: 0; width: 0; height: 0; }
+  .time-option label { display: flex; flex-direction: column; gap: 3px; padding: 10px 14px; border: 2px solid #c2d8c9; border-radius: 10px; cursor: pointer; font-size: 0.88rem; font-weight: 600; color: var(--green); transition: all 0.15s; user-select: none; }
+  .slot-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .slot-spots { font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 100px; white-space: nowrap; flex-shrink: 0; }
+  .slot-spots.open { background: var(--green-light); color: var(--green); }
+  .slot-spots.low  { background: var(--gold-light);  color: #7a5c00; }
+  .slot-spots.full { background: #ffeaea;            color: var(--red); }
+  .slot-loc .map-link, .loc-label .map-link { color: var(--gray); font-size: inherit; text-decoration: none; transition: color 0.15s; }
+  .slot-loc .map-link:hover, .loc-label .map-link:hover { color: var(--green); text-decoration: underline; }
+  .time-option input:checked + label .map-link { color: var(--gold); }
+  .time-option input:checked + label .map-link:hover { color: #fff; }
+  .time-chip .loc .map-link { color: var(--gold); text-decoration: none; font-size: inherit; }
+  .time-chip .loc .map-link:hover { text-decoration: underline; }
+  .time-option input:checked + label { border-color: var(--green); background: var(--green); color: var(--white); }
+  .time-option input:checked + label .slot-loc  { color: var(--gold); }
+  .time-option input:checked + label .slot-spots.open { background: rgba(255,255,255,0.2); color: var(--white); }
+  .time-option input:checked + label .slot-spots.low  { background: var(--gold-light); color: #7a5c00; }
+  .time-option label:hover { border-color: var(--green-mid); background: var(--light-bg); }
+  .time-option input:checked + label:hover { background: var(--green-mid); }
+  .slot-full label { opacity: 0.5; cursor: not-allowed; }
+  .no-times-msg { color: var(--gray); font-style: italic; font-size: 0.9rem; padding: 8px 0 12px; }
+
+  /* PAYMENT BOX */
+  .payment-box { background: var(--green); border-radius: 12px; padding: 16px 20px; margin: 16px 0; color: var(--white); }
+  .payment-sessions { font-size: 0.88rem; color: rgba(255,255,255,0.75); margin-bottom: 4px; }
+  .payment-total { font-family: 'Nunito', sans-serif; font-size: 2rem; font-weight: 900; color: var(--gold); line-height: 1.1; margin-bottom: 10px; }
+  .payment-venmo { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.12); border: 1.5px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 8px 14px; font-size: 0.92rem; font-weight: 700; color: var(--white); }
+  .payment-venmo .venmo-handle { color: var(--gold); font-size: 1.05rem; text-decoration: underline; cursor: pointer; }
+
+  /* CALENDAR NOTE */
+  .calendar-note { background: var(--green-light); border: 1.5px solid var(--green-border); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 0.85rem; color: var(--green-mid); display: flex; align-items: center; gap: 8px; }
+
+  /* SUBMIT */
+  .btn-submit { display: block; width: 100%; padding: 14px; background: var(--green); color: white; border: none; border-radius: 10px; font-family: 'Barlow Condensed', sans-serif; font-size: 1.25rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; cursor: pointer; transition: background 0.15s, transform 0.1s; }
+  .btn-submit:hover { background: var(--green-mid); transform: translateY(-1px); }
+  .btn-submit:active { transform: translateY(0); }
+
+  /* RESPONSES TABLE */
+  .responses-section { padding: 28px 24px; }
+  .responses-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 10px; }
+  .responses-header h2 { font-family: 'Barlow Condensed', sans-serif; font-size: 1.35rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--green); }
+  .btn-export { padding: 8px 16px; background: var(--green-mid); color: var(--white); border: none; border-radius: 7px; font-family: 'Barlow Condensed', sans-serif; font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: background 0.15s; }
+  .btn-export:hover { background: var(--green); }
+  .table-wrap { overflow-x: auto; border-radius: 10px; border: 1.5px solid #c2d8c9; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 420px; }
+  thead { background: var(--green); color: var(--white); }
+  thead th { padding: 11px 14px; text-align: left; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; font-size: 0.82rem; white-space: nowrap; }
+  tbody tr { border-bottom: 1px solid #dde8e2; transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--light-bg); }
+  tbody td { padding: 10px 14px; color: var(--green); vertical-align: middle; }
+  .player-name { font-weight: 600; }
+  .parent-email { color: var(--gray); font-size: 0.82rem; }
+  .avail-times { display: flex; flex-wrap: wrap; gap: 5px; }
+  .avail-pill { background: var(--green-light); color: var(--green-mid); padding: 2px 9px; border-radius: 100px; font-size: 0.78rem; font-weight: 600; white-space: nowrap; }
+  .btn-resend { padding: 4px 10px; background: var(--gold-light); color: var(--green); border: none; border-radius: 5px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .btn-resend:hover { background: var(--gold); color: var(--white); }
+  .btn-delete-row { background: none; border: none; color: #ccc; cursor: pointer; font-size: 1.1rem; padding: 2px 6px; border-radius: 4px; transition: color 0.15s, background 0.15s; }
+  .btn-delete-row:hover { color: var(--red); background: #ffeaea; }
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--gray); font-size: 0.95rem; }
+  .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 8px; }
+
+  /* SUMMARY */
+  .summary-section { padding: 0 24px 28px; }
+  .summary-section h2 { font-family: 'Barlow Condensed', sans-serif; font-size: 1.35rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--green); margin-bottom: 14px; }
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+  .summary-card { background: var(--light-bg); border-radius: 10px; padding: 14px 16px; border: 1.5px solid var(--green-border); position: relative; cursor: default; transition: border-color 0.15s, box-shadow 0.15s; }
+  .summary-card:hover { border-color: var(--green); box-shadow: 0 4px 16px rgba(0,88,38,0.12); }
+  .summary-card .tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--green);
+    color: var(--white);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    line-height: 1.6;
+    white-space: nowrap;
+    z-index: 10;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    pointer-events: none;
+    min-width: 140px;
+    text-align: left;
+  }
+  .summary-card .tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--green);
+  }
+  .summary-card .tooltip .tip-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--gold);
+    margin-bottom: 4px;
+  }
+  .summary-card:hover .tooltip { display: block; }
+  .summary-card .time-label { font-family: 'Barlow Condensed', sans-serif; font-size: 0.95rem; font-weight: 700; color: var(--green); margin-bottom: 2px; }
+  .summary-card .loc-label { font-size: 0.75rem; color: var(--gray); margin-bottom: 6px; }
+  .role-select { padding: 10px 14px; border: 2px solid #c2d8c9; border-radius: 8px; font-size: 0.95rem; font-family: 'Barlow', sans-serif; color: var(--green); background: var(--white); outline: none; cursor: pointer; width: 100%; }
+  .role-select:focus { border-color: var(--green-mid); }
+  .role-badge { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 1px 7px; border-radius: 100px; margin-left: 6px; vertical-align: middle; }
+  .role-badge.skater { background: var(--green-light); color: var(--green); }
+  .role-badge.goalie { background: var(--gold-light); color: #7a5c00; }
+
+  .slot-badges { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 3px; }
+  .slot-spots.goalie { background: var(--gold-light); color: #7a5c00; }
+  .time-option input:checked + label .slot-spots.goalie { background: rgba(255,255,255,0.2); color: var(--white); }
+
+  .count-badge { display: inline-block; border-radius: 100px; padding: 2px 10px; font-size: 0.8rem; font-weight: 700; }
+  .skater-badge { background: var(--green); color: var(--gold); }
+  .goalie-badge { background: var(--gold); color: var(--green); }
+  .summary-card .player-list { font-size: 0.82rem; color: var(--gray); line-height: 1.6; }
+  .divider { height: 1px; background: #dde8e2; margin: 0 24px; }
+
+  .admin-link { margin-top: 10px; }
+  .admin-link span { font-size: 0.78rem; color: rgba(255,255,255,0.2); cursor: pointer; user-select: none; transition: color 0.2s; }
+  .admin-link span:hover { color: rgba(255,255,255,0.5); }
+
+  .confirm-box { background: var(--green); border-radius: 12px; padding: 20px 22px; margin-top: 16px; color: var(--white); animation: pop 0.3s ease; }
+  .confirm-icon { font-size: 2rem; margin-bottom: 4px; }
+  .confirm-title { font-family: 'Nunito', sans-serif; font-size: 1.5rem; font-weight: 900; color: var(--gold); margin-bottom: 12px; }
+  .confirm-player { margin-bottom: 10px; font-size: 0.92rem; }
+  .confirm-player ul { margin: 4px 0 0 16px; opacity: 0.85; font-size: 0.85rem; }
+  .confirm-payment { margin: 12px 0 6px; font-size: 0.92rem; }
+  .confirm-payment a { color: var(--gold); text-decoration: underline; }
+  .confirm-ics { font-size: 0.85rem; opacity: 0.8; margin-bottom: 14px; }
+  .confirm-change { background: rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 14px; font-size: 0.85rem; line-height: 1.7; border: 1px solid rgba(255,255,255,0.2); }
+  .confirm-change a { color: var(--gold); text-decoration: underline; }
+
+  .local-note { font-size: 0.78rem; color: var(--gray); font-style: italic; margin-bottom: 14px; padding: 6px 10px; background: #fff8e1; border-radius: 6px; border-left: 3px solid var(--gold); }
+
+  @keyframes fadeDown { from { opacity:0; transform:translateY(-16px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeUp   { from { opacity:0; transform:translateY(20px);  } to { opacity:1; transform:translateY(0); } }
+  @keyframes pop      { from { opacity:0; transform:scale(0.92);       } to { opacity:1; transform:scale(1);    } }
+  @media (max-width: 540px) {
+    .admin-bar { flex-direction: column; }
+    .form-row { flex-direction: column; }
+    .times-grid { grid-template-columns: 1fr; }
+    .summary-grid { grid-template-columns: 1fr; }
+    .edit-modal-fields { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <header>
+    <svg class="logo-svg" viewBox="0 0 120 110" xmlns="http://www.w3.org/2000/svg">
+      <!-- Puck FIRST so sticks render on top -->
+      <ellipse cx="60" cy="56" rx="23" ry="14" fill="#0a0a0a"/>
+      <ellipse cx="60" cy="54" rx="23" ry="14" fill="#1c1c1c"/>
+      <ellipse cx="60" cy="53" rx="20" ry="11" fill="#252525"/>
+      <ellipse cx="55" cy="50" rx="8" ry="4" fill="#333" opacity="0.5"/>
+
+      <!-- Sticks ON TOP of puck -->
+      <g stroke-linecap="round" stroke-linejoin="round">
+        <!-- Left stick shaft: top-left down to center -->
+        <line x1="28" y1="5" x2="62" y2="72" stroke="#e8d099" stroke-width="4"/>
+        <!-- Left stick blade: kicks right -->
+        <line x1="59" y1="68" x2="85" y2="78" stroke="#e8d099" stroke-width="4"/>
+
+        <!-- Right stick shaft: top-right down to center -->
+        <line x1="92" y1="5" x2="58" y2="72" stroke="#c9a227" stroke-width="4"/>
+        <!-- Right stick blade: kicks left -->
+        <line x1="61" y1="68" x2="35" y2="78" stroke="#c9a227" stroke-width="4"/>
+      </g>
+    </svg>
+    <h1>12U BUBBL<span class="apos">'</span>R <span class="cup">CUP SERIES</span></h1>
+    <p>Select all ice times that work for your skater — a calendar invite will download automatically.</p>
+    <p class="admin-link"><span data-action="promptAdmin">⚙</span></p>
+  </header>
+
+  <div class="card">
+
+    <!-- ADMIN: Manage Ice Times (hidden until unlocked) -->
+    <div class="admin-bar" id="adminBar" style="display:none">
+      <label>📅 Add Session:</label>
+      <div class="admin-inputs">
+        <div class="admin-field">
+          <span class="admin-field-label">Date</span>
+          <input type="date" id="addDate" />
+        </div>
+        <div class="admin-field">
+          <span class="admin-field-label">Start Time</span>
+          <select id="addStart"></select>
+          <input type="text" id="addStartCustom" class="custom-time-input" placeholder="e.g. 7:25 AM" style="display:none" />
+        </div>
+        <div class="admin-field">
+          <span class="admin-field-label">End Time</span>
+          <select id="addEnd"></select>
+          <input type="text" id="addEndCustom" class="custom-time-input" placeholder="e.g. 8:45 AM" style="display:none" />
+        </div>
+        <div class="admin-field">
+          <span class="admin-field-label">Location</span>
+          <select id="addLoc">
+            <option value="MN Made SLP – Blue Rink">MN Made SLP – Blue Rink</option>
+            <option value="MN Made SLP – Red Rink">MN Made SLP – Red Rink</option>
+            <option value="custom">Other (type below)...</option>
+          </select>
+        </div>
+        <div class="admin-field" id="customLocWrap" style="display:none">
+          <span class="admin-field-label">Custom Location</span>
+          <input type="text" id="addLocCustom" placeholder="Enter location" />
+        </div>
+        <button class="btn-add-time" data-action="addIceTime">+ Add</button>
+      </div>
+    </div>
+
+    <div class="times-manager" id="timesManager" style="display:none">
+      <h2>Scheduled Ice Times <span style="font-size:0.78rem;font-weight:500;color:var(--gray);text-transform:none;letter-spacing:0">(click a session to edit)</span></h2>
+      <div class="time-chips" id="timeChips"></div>
+    </div>
+
+    <!-- Edit modal -->
+    <div id="editModal" class="edit-modal" style="display:none">
+      <div class="edit-modal-box">
+        <div class="edit-modal-title">✏️ Edit Session</div>
+        <div class="edit-modal-fields">
+          <div class="admin-field">
+            <span class="admin-field-label">Date</span>
+            <input type="date" id="editDate" />
+          </div>
+          <div class="admin-field">
+            <span class="admin-field-label">Start Time</span>
+            <select id="editStart"></select>
+            <input type="text" id="editStartCustom" class="custom-time-input" placeholder="e.g. 7:25 AM" style="display:none" />
+          </div>
+          <div class="admin-field">
+            <span class="admin-field-label">End Time</span>
+            <select id="editEnd"></select>
+            <input type="text" id="editEndCustom" class="custom-time-input" placeholder="e.g. 8:45 AM" style="display:none" />
+          </div>
+          <div class="admin-field">
+            <span class="admin-field-label">Location</span>
+            <select id="editLoc">
+              <option value="MN Made SLP – Blue Rink">MN Made SLP – Blue Rink</option>
+              <option value="MN Made SLP – Red Rink">MN Made SLP – Red Rink</option>
+              <option value="custom">Other (type below)...</option>
+            </select>
+          </div>
+          <div class="admin-field" id="editCustomLocWrap" style="display:none">
+            <span class="admin-field-label">Custom Location</span>
+            <input type="text" id="editLocCustom" placeholder="Enter location" />
+          </div>
+        </div>
+        <div class="edit-modal-actions">
+          <button class="btn-edit-save"   data-action="saveEdit">✓ Save</button>
+          <button class="btn-edit-cancel" data-action="closeEdit">Cancel</button>
+          <button class="btn-edit-delete" data-action="deleteEdit">🗑 Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SIGN UP FORM -->
+    <div class="signup-section">
+      <h2>✏️ Register Your Player(s)</h2>
+
+      <!-- Parent email — shared across all children -->
+      <div class="form-row" style="margin-bottom:20px">
+        <div class="form-group">
+          <label>Parent Email Address</label>
+          <input type="email" id="parentEmail" placeholder="parent@email.com" />
+        </div>
+      </div>
+
+      <!-- Dynamic player cards -->
+      <div id="childrenList"></div>
+
+      <button class="btn-add-child" data-action="addChild">+ Add Another Player</button>
+
+      <!-- Payment summary -->
+      <div id="paymentBox" class="payment-box" style="display:none">
+        <div class="payment-sessions" id="paymentSessions"></div>
+        <div class="payment-total"   id="paymentTotal"></div>
+        <div class="payment-venmo"   id="paymentVenmo"></div>
+      </div>
+
+      <div class="calendar-note">
+        📅 <span>After submitting, a <strong>.ics calendar file</strong> will download for each player — open it to add sessions to Google Calendar, Apple Calendar, or Outlook.</span>
+      </div>
+
+      <button class="btn-submit" data-action="submitSignup">✓ Submit &amp; Download Calendar Invite(s)</button>
+
+      <!-- Confirmation message shown after submit -->
+      <div id="confirmBox" class="confirm-box" style="display:none">
+        <div class="confirm-icon">🏒</div>
+        <div class="confirm-title">You're registered!</div>
+        <div class="confirm-body" id="confirmBody"></div>
+        <div class="confirm-change">
+          Need to make changes or cancel? Contact Jeff:<br>
+          <a href="mailto:jeffyurecko@gmail.com">jeffyurecko@gmail.com</a> &nbsp;·&nbsp;
+          <a href="tel:6124019804">612-401-9804</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SUMMARY BY SLOT -->
+    <div class="summary-section">
+      <h2>📊 Summary by Time Slot</h2>
+      <p class="local-note">Live roster — updates every 30 seconds across all devices.</p>
+      <div class="summary-grid" id="summaryGrid"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- RESPONSES TABLE -->
+    <div class="responses-section">
+      <div class="responses-header">
+        <h2>📋 Responses</h2>
+        <button class="btn-export" data-action="exportCSV">⬇ Export CSV</button>
+      </div>
+      <p class="local-note" id="syncNote">🔄 Loading registrations...</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Player</th><th>Email</th><th>Sessions</th><th></th></tr></thead>
+          <tbody id="responsesBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ─── CONFIG ──────────────────────────────────────────────────────────────
+const MAX_SKATERS     = 14;
+const MAX_GOALIES     = 2;
+const PRICE_PER_SKATE = 15;
+const VENMO           = '@yury21';
+
+// ─── EMAILJS CONFIG (fill these in after setting up emailjs.com) ──────────
+const EMAILJS_PUBLIC_KEY  = 'QSfvdc-Sctmb4ziaa';
+const EMAILJS_SERVICE_ID  = 'service_cwlji9b';
+const EMAILJS_TEMPLATE_ID = 'template_p2cprpp';
+emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+
+// ─── GOOGLE SHEETS CONFIG ────────────────────────────────────────────────
+// Paste your Apps Script Web App URL here after setup:
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxpA_qxCeCBVYHDaJHsWirax77DJ1cw98PFA4VEjHldMu-mBvk96OxCCZB4ZJjhAfn7/exec';
+
+// ─── DATA ────────────────────────────────────────────────────────────────
+const DEFAULT_TIMES = [
+  { label: "Sat, Jun 13 · 11:10 AM – 12:30 PM", location: "MN Made SLP – Blue Rink", start: "20260613T111000", end: "20260613T123000" },
+  { label: "Mon, Jun 15 · 6:30 – 7:50 PM",      location: "MN Made SLP – Blue Rink", start: "20260615T183000", end: "20260615T195000" },
+  { label: "Fri, Jun 19 · 5:30 – 6:50 PM",      location: "MN Made SLP – Blue Rink", start: "20260619T173000", end: "20260619T185000" },
+  { label: "Sat, Jun 27 · 1:00 – 2:20 PM",      location: "MN Made SLP – Blue Rink", start: "20260627T130000", end: "20260627T142000" },
+];
+
+let iceTimes  = JSON.parse(localStorage.getItem('hc_times4') || 'null') || DEFAULT_TIMES.map(t => ({...t}));
+iceTimes.sort((a, b) => a.start.localeCompare(b.start));
+let signups   = [];
+let childCount = 0;
+
+function saveIceTimes() {
+  localStorage.setItem('hc_times4', JSON.stringify(iceTimes));
+}
+
+// ─── GOOGLE SHEETS SYNC ──────────────────────────────────────────────────
+async function loadSignups() {
+  if (SHEETS_URL === 'https://script.google.com/macros/s/AKfycbxpA_qxCeCBVYHDaJHsWirax77DJ1cw98PFA4VEjHldMu-mBvk96OxCCZB4ZJjhAfn7/exec') {
+    const note = document.getElementById('syncNote');
+    if (note) note.textContent = '⚠️ Google Sheets not connected yet — add your Apps Script URL to enable live sync.';
+    return;
+  }
+  try {
+    const res  = await fetch(`${SHEETS_URL}?action=get`);
+    const data = await res.json();
+    signups = data.signups || [];
+    const note = document.getElementById('syncNote');
+    if (note) { note.textContent = `✅ Live — last synced ${new Date().toLocaleTimeString()}`; }
+    renderResponses();
+    renderSummary();
+    rebuildAllGrids();
+  } catch (err) {
+    console.warn('Could not load signups:', err);
+    const note = document.getElementById('syncNote');
+    if (note) note.textContent = '⚠️ Could not connect to Google Sheets. Check your URL.';
+  }
+}
+
+async function saveSignup(entry) {
+  if (SHEETS_URL === 'https://script.google.com/macros/s/AKfycbxpA_qxCeCBVYHDaJHsWirax77DJ1cw98PFA4VEjHldMu-mBvk96OxCCZB4ZJjhAfn7/exec') return;
+  try {
+    await fetch(SHEETS_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body:    JSON.stringify({ action: 'add', entry }),
+    });
+  } catch (err) {
+    console.warn('Could not save signup:', err);
+  }
+}
+
+async function deleteSignupRemote(ts) {
+  if (SHEETS_URL === 'https://script.google.com/macros/s/AKfycbxpA_qxCeCBVYHDaJHsWirax77DJ1cw98PFA4VEjHldMu-mBvk96OxCCZB4ZJjhAfn7/exec') return;
+  try {
+    await fetch(SHEETS_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body:    JSON.stringify({ action: 'delete', ts }),
+    });
+  } catch (err) {
+    console.warn('Could not delete signup:', err);
+  }
+}
+
+// Poll for updates every 30 seconds so roster stays live across devices
+setInterval(loadSignups, 30000);
+
+// ─── CONSTANTS & HELPERS ─────────────────────────────────────────────────
+const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// Generate time options in 5-minute increments from 5:00 AM to 10:30 PM
+function generateTimeOptions() {
+  const options = [];
+  for (let h = 5; h <= 22; h++) {
+    for (let m = 0; m < 60; m += 5) {
+      if (h === 22 && m > 30) break;
+      const val   = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+      const ampm  = h >= 12 ? 'PM' : 'AM';
+      const h12   = h % 12 || 12;
+      const label = `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+      options.push([val, label]);
+    }
+  }
+  return options;
+}
+const TIME_OPTIONS = generateTimeOptions();
+
+const MAP_LINKS = {
+  'MN Made SLP – Blue Rink': 'https://maps.google.com/?q=MN+Made+Hockey+5075+Wayzata+Blvd+St+Louis+Park+MN',
+  'MN Made SLP – Red Rink':  'https://maps.google.com/?q=MN+Made+Hockey+5075+Wayzata+Blvd+St+Louis+Park+MN',
+};
+
+function mapLink(location) {
+  const url = MAP_LINKS[location] || `https://maps.google.com/?q=${encodeURIComponent(location)}`;
+  return `<a class="map-link" href="${url}" target="_blank">📍 ${esc(location)}</a>`;
+}
+
+function populateTimeSelect(elId, selectedVal) {
+  const el = document.getElementById(elId);
+  // Check if selectedVal is in TIME_OPTIONS; if not, we'll select 'custom'
+  const exists = TIME_OPTIONS.some(([v]) => v === selectedVal);
+  el.innerHTML = TIME_OPTIONS.map(([v, l]) =>
+    `<option value="${v}"${v === selectedVal ? ' selected' : ''}>${l}</option>`
+  ).join('') + `<option value="custom"${!exists && selectedVal ? ' selected' : ''}>✏️ Custom time...</option>`;
+}
+
+// Parse a typed time string like "7:25 AM" or "19:25" → "19:25"
+function parseTypedTime(str) {
+  str = str.trim();
+  const match12 = str.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (match12) {
+    let h = parseInt(match12[1]);
+    const m = parseInt(match12[2]);
+    const ampm = match12[3].toUpperCase();
+    if (ampm === 'PM' && h !== 12) h += 12;
+    if (ampm === 'AM' && h === 12) h = 0;
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  }
+  const match24 = str.match(/^(\d{1,2}):(\d{2})$/);
+  if (match24) return `${String(parseInt(match24[1])).padStart(2,'0')}:${match24[2]}`;
+  return null;
+}
+
+// Get the resolved HH:MM value from a select+custom input pair
+function resolveTime(selectId, customInputId) {
+  const sel = document.getElementById(selectId).value;
+  if (sel !== 'custom') return sel;
+  const parsed = parseTypedTime(document.getElementById(customInputId).value);
+  if (!parsed) { alert('Please enter a valid time (e.g. "7:25 AM" or "19:25").'); return null; }
+  return parsed;
+}
+
+// Toggle custom time input visibility when "Custom time..." is selected
+document.addEventListener('change', function(e) {
+  if (e.target.id === 'addLoc')    document.getElementById('customLocWrap').style.display     = e.target.value === 'custom' ? 'block' : 'none';
+  if (e.target.id === 'editLoc')   document.getElementById('editCustomLocWrap').style.display = e.target.value === 'custom' ? 'block' : 'none';
+  if (e.target.id === 'addStart')  document.getElementById('addStartCustom').style.display    = e.target.value === 'custom' ? 'block' : 'none';
+  if (e.target.id === 'addEnd')    document.getElementById('addEndCustom').style.display      = e.target.value === 'custom' ? 'block' : 'none';
+  if (e.target.id === 'editStart') document.getElementById('editStartCustom').style.display   = e.target.value === 'custom' ? 'block' : 'none';
+  if (e.target.id === 'editEnd')   document.getElementById('editEndCustom').style.display     = e.target.value === 'custom' ? 'block' : 'none';
+});
+
+function formatTime(hhmm) {
+  const [h, m] = hhmm.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12  = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+}
+
+function buildICSDatetime(dateStr, timeStr) {
+  return dateStr.replace(/-/g,'') + 'T' + timeStr.replace(':','') + '00';
+}
+
+function buildLabel(dow, dateStr, startTime, endTime) {
+  const [, mo, d] = dateStr.split('-').map(Number);
+  return `${dow}, ${MONTH_LABELS[mo-1]} ${d} · ${formatTime(startTime)} – ${formatTime(endTime)}`;
+}
+
+
+function esc(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function slotCount(label, role) {
+  return signups.filter(s => s.role === role && s.times.some(x => x.label === label)).length;
+}
+
+function getSelectedRole(entry) {
+  const sel = entry ? entry.querySelector('.role-select') : null;
+  return sel ? sel.value : 'skater';
+}
+
+// ─── TIMES GRID HTML (per child) ─────────────────────────────────────────
+function makeTimesGridHTML(childIdx, role) {
+  role = role || 'skater';
+  if (!iceTimes.length) return '<p class="no-times-msg">No ice times have been added yet.</p>';
+  return iceTimes.map((t, i) => {
+    const skatersTaken    = slotCount(t.label, 'skater');
+    const goaliesTaken    = slotCount(t.label, 'goalie');
+    const skatersLeft     = MAX_SKATERS - skatersTaken;
+    const goaliesLeft     = MAX_GOALIES - goaliesTaken;
+    const skatersFull     = skatersLeft <= 0;
+    const goaliesFull     = goaliesLeft <= 0;
+    const disabledForRole = role === 'goalie' ? goaliesFull : skatersFull;
+
+    // Skater badge
+    const ssc = skatersFull ? 'slot-spots full' : skatersLeft <= 3 ? 'slot-spots low' : 'slot-spots open';
+    const sst = skatersFull ? '🔒 Skaters Full' : `${skatersLeft} skater${skatersLeft !== 1 ? 's' : ''} left`;
+    // Goalie badge
+    const gsc = goaliesFull ? 'slot-spots full' : 'slot-spots goalie';
+    const gst = goaliesFull ? '🔒 Goalies Full' : `${goaliesLeft} goalie${goaliesLeft !== 1 ? 's' : ''} left`;
+
+    return `<div class="time-option${disabledForRole ? ' slot-full' : ''}">
+      <input type="checkbox" id="c${childIdx}_t${i}" value="${i}"${disabledForRole ? ' disabled' : ''}>
+      <label for="c${childIdx}_t${i}">
+        <span class="slot-top">${esc(t.label)}</span>
+        <span class="slot-badges">
+          <span class="${ssc}">${sst}</span>
+          <span class="${gsc}">${gst}</span>
+        </span>
+        <span class="slot-loc">${mapLink(t.location)}</span>
+      </label>
+    </div>`;
+  }).join('');
+}
+
+// ─── CHILD MANAGEMENT ────────────────────────────────────────────────────
+function addChild() {
+  const idx = childCount++;
+  const div = document.createElement('div');
+  div.className = 'child-entry';
+  div.id = `child_${idx}`;
+  div.innerHTML = `
+    <div class="child-header">
+      <span class="child-label">Player ${idx + 1}</span>
+      ${idx > 0 ? `<button class="btn-remove-child" data-remove="true">✕ Remove</button>` : ''}
+    </div>
+    <div class="form-row" style="margin-bottom:12px">
+      <div class="form-group">
+        <label>Player Name (First Last)</label>
+        <input type="text" placeholder="e.g. Max Smith" />
+      </div>
+      <div class="form-group" style="max-width:160px">
+        <label>Position</label>
+        <select class="role-select">
+          <option value="skater">⛸ Skater</option>
+          <option value="goalie">🥅 Goalie</option>
+        </select>
+      </div>
+    </div>
+    <div class="times-grid" id="timesGrid_${idx}">${makeTimesGridHTML(idx, 'skater')}</div>
+  `;
+  document.getElementById('childrenList').appendChild(div);
+  const grid = div.querySelector('.times-grid');
+  grid.addEventListener('change', updatePayment);
+  // When role changes, rebuild this entry's grid for the new role
+  div.querySelector('.role-select').addEventListener('change', function() {
+    const role = this.value;
+    grid.innerHTML = makeTimesGridHTML(idx, role);
+    grid.addEventListener('change', updatePayment);
+    updatePayment();
+  });
+  refreshChildLabels();
+}
+
+// ─── CENTRAL EVENT DELEGATION ────────────────────────────────────────────
+document.addEventListener('click', function(e) {
+  const target = e.target.closest('[data-action], [data-remove], [data-remove-time]');
+  if (!target) return;
+
+  // Remove player card
+  if (target.dataset.remove === 'true') {
+    const entry = target.closest('.child-entry');
+    if (entry) { entry.remove(); refreshChildLabels(); updatePayment(); }
+    return;
+  }
+
+  const action = target.dataset.action;
+  const idx    = target.dataset.idx !== undefined ? parseInt(target.dataset.idx) : null;
+
+  if (action === 'addIceTime')   { addIceTime(); return; }
+  if (action === 'addChild')     { addChild(); return; }
+  if (action === 'submitSignup') { submitSignup(); return; }
+  if (action === 'exportCSV')    { exportCSV(); return; }
+  if (action === 'promptAdmin')  { promptAdmin(); return; }
+  if (action === 'saveEdit')     { saveEdit(); return; }
+  if (action === 'closeEdit')    { closeEdit(); return; }
+  if (action === 'deleteEdit')   { deleteEdit(); return; }
+  if (action === 'openEdit')     { openEdit(idx); return; }
+  if (action === 'resendICS')    { resendICS(idx); return; }
+  if (action === 'deleteSignup') { deleteSignup(idx); return; }
+});
+
+function refreshChildLabels() {
+  document.querySelectorAll('.child-entry').forEach((el, i) => {
+    const lbl = el.querySelector('.child-label');
+    if (lbl) lbl.textContent = `Player ${i + 1}`;
+  });
+}
+
+function rebuildAllGrids() {
+  document.querySelectorAll('.child-entry').forEach(entry => {
+    const idx  = entry.id.replace('child_', '');
+    const grid = entry.querySelector('.times-grid');
+    const role = getSelectedRole(entry);
+    if (grid) {
+      grid.innerHTML = makeTimesGridHTML(idx, role);
+      grid.addEventListener('change', updatePayment);
+    }
+  });
+}
+
+// ─── PAYMENT ─────────────────────────────────────────────────────────────
+function updatePayment() {
+  let total = 0;
+  document.querySelectorAll('.child-entry').forEach(entry => {
+    total += entry.querySelectorAll('.times-grid input:checked').length;
+  });
+  const box = document.getElementById('paymentBox');
+  if (!total) { box.style.display = 'none'; return; }
+  const dollars = total * PRICE_PER_SKATE;
+  box.style.display = 'block';
+  document.getElementById('paymentSessions').textContent = `${total} session${total !== 1 ? 's' : ''} × $${PRICE_PER_SKATE}`;
+  document.getElementById('paymentTotal').textContent    = `Total: $${dollars}`;
+  document.getElementById('paymentVenmo').innerHTML      = `💸 Please Venmo <a class="venmo-handle" href="https://venmo.com/u/yury21" target="_blank">@yury21</a> <strong>$${dollars}</strong>`;
+}
+
+// ─── EMAIL ───────────────────────────────────────────────────────────────
+function makeGCalLink(playerName, slot) {
+  if (!slot.start || !slot.end) return null;
+  const params = new URLSearchParams({
+    action:   'TEMPLATE',
+    text:     `12U BUBBL'R Cup Series – ${playerName}`,
+    dates:    `${slot.start}/${slot.end}`,
+    location: slot.location,
+    details:  `Hockey camp session for ${playerName}.`,
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+function makeOutlookLink(playerName, slot) {
+  if (!slot.start || !slot.end) return null;
+  // Convert YYYYMMDDTHHMMSS to YYYY-MM-DDTHH:MM:SS
+  const fmt = s => `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}T${s.slice(9,11)}:${s.slice(11,13)}:${s.slice(13,15)}`;
+  const params = new URLSearchParams({
+    path:      '/calendar/action/compose',
+    rru:       'addevent',
+    subject:   `12U BUBBL'R Cup Series – ${playerName}`,
+    startdt:   fmt(slot.start),
+    enddt:     fmt(slot.end),
+    location:  slot.location,
+    body:      `Hockey camp session for ${playerName}.`,
+  });
+  return `https://outlook.live.com/calendar/0/deeplink/compose?${params.toString()}`;
+}
+
+function sendConfirmationEmail(email, savedEntries, dollars) {
+  if (EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') return;
+
+  // Build HTML session blocks for each player
+  const sessionsHtml = savedEntries.map(({ player, times }) => {
+    const sessionRows = times.length ? times.map(t => {
+      const gcal    = makeGCalLink(player, t)    || '#';
+      const outlook = makeOutlookLink(player, t) || '#';
+      return `
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;background:#f2f7f4;border-radius:8px;border:1px solid #a8d4b5;">
+          <tr><td style="padding:10px 14px;">
+            <div style="font-size:14px;font-weight:600;color:#005826;">${t.label}</div>
+            <div style="font-size:12px;color:#5a6a5e;margin-bottom:8px;">
+              <a href="${MAP_LINKS[t.location] || `https://maps.google.com/?q=${encodeURIComponent(t.location)}`}" target="_blank" style="color:#005826;text-decoration:underline;">📍 ${t.location}</a>
+            </div>
+            <a href="${gcal}" target="_blank" style="display:inline-block;margin-right:8px;padding:5px 12px;background:#005826;color:#ffffff;font-size:12px;font-weight:700;text-decoration:none;border-radius:5px;">+ Google Calendar</a>
+            <a href="${outlook}" target="_blank" style="display:inline-block;padding:5px 12px;background:#c9a227;color:#005826;font-size:12px;font-weight:700;text-decoration:none;border-radius:5px;">+ Outlook</a>
+          </td></tr>
+        </table>`;
+    }).join('') : '<p style="color:#5a6a5e;font-size:13px;">No sessions selected.</p>';
+
+    return `
+      <div style="margin-bottom:16px;">
+        <div style="font-size:14px;font-weight:700;color:#005826;text-transform:uppercase;letter-spacing:0.06em;border-bottom:2px solid #e6f2eb;padding-bottom:4px;margin-bottom:8px;">🏒 ${player}</div>
+        ${sessionRows}
+      </div>`;
+  }).join('');
+
+  const templateParams = {
+    to_email:      email,
+    reply_to:      'jeffyurecko@gmail.com',
+    sessions_html: sessionsHtml,
+    total_due:     `$${dollars}`,
+    venmo_handle:  '@yury21',
+    contact_email: 'jeffyurecko@gmail.com',
+    contact_phone: '612-401-9804',
+  };
+
+  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
+    .then(() => console.log('Confirmation email sent.'))
+    .catch(err => console.warn('EmailJS error:', err));
+}
+
+// ─── ICS ─────────────────────────────────────────────────────────────────
+function makeICS(playerName, slots) {
+  const stamp = new Date().toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z';
+  const events = slots.map((s, i) => [
+    'BEGIN:VEVENT',
+    `UID:bubblr-${stamp}-${i}@hockeycamp`,
+    `DTSTAMP:${stamp}`,
+    `DTSTART:${s.start}`,
+    `DTEND:${s.end}`,
+    `SUMMARY:12U BUBBL'R Cup Series – ${playerName}`,
+    `LOCATION:${s.location}`,
+    `DESCRIPTION:Session for ${playerName}.\\nLocation: ${s.location}`,
+    'END:VEVENT'
+  ].join('\r\n'));
+  return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//BubblrCup//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH',...events,'END:VCALENDAR'].join('\r\n');
+}
+
+function downloadICS(playerName, slots) {
+  if (!slots.length) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([makeICS(playerName, slots)], { type: 'text/calendar;charset=utf-8' }));
+  a.download = `BubblrCup_${playerName.replace(/\s+/g,'_')}.ics`;
+  a.click();
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────
+function renderResponses() {
+  const tb        = document.getElementById('responsesBody');
+  const isAdmin   = document.getElementById('adminBar').style.display !== 'none';
+  if (!signups.length) {
+    tb.innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="empty-icon">🏒</div>No sign-ups yet — share this page with parents!</div></td></tr>`;
+    return;
+  }
+  tb.innerHTML = signups.map((s, i) => `
+    <tr>
+      <td class="player-name">${esc(s.player)} <span class="role-badge ${s.role || 'skater'}">${s.role === 'goalie' ? '🥅 Goalie' : '⛸ Skater'}</span></td>
+      <td class="parent-email">${esc(s.email)}</td>
+      <td><div class="avail-times">${s.times.map(t => `<span class="avail-pill">${esc(t.label)}</span>`).join('') || '<span style="color:#aaa;font-size:.8rem">None</span>'}</div></td>
+      <td style="white-space:nowrap">${isAdmin ? `
+        <button class="btn-resend" data-action="resendICS" data-idx="${i}" title="Re-download calendar">📅</button>
+        <button class="btn-delete-row" data-action="deleteSignup" data-idx="${i}">✕</button>` : ''}
+      </td>
+    </tr>`).join('');
+}
+
+function renderSummary() {
+  const g = document.getElementById('summaryGrid');
+  if (!iceTimes.length) { g.innerHTML = '<p style="color:var(--gray);font-size:.9rem;font-style:italic">Add ice times to see the summary.</p>'; return; }
+  g.innerHTML = iceTimes.map(t => {
+    const skaters = signups.filter(s => (s.role||'skater') === 'skater' && s.times.some(x => x.label === t.label)).map(s => s.player);
+    const goalies = signups.filter(s => s.role === 'goalie' && s.times.some(x => x.label === t.label)).map(s => s.player);
+    const tipContent = (skaters.length || goalies.length)
+      ? `${skaters.length ? `<div class="tip-title">Skaters (${skaters.length})</div>${skaters.map(p => '⛸ ' + esc(p)).join('<br>')}` : ''}
+         ${goalies.length ? `<div class="tip-title" style="margin-top:6px">Goalies (${goalies.length})</div>${goalies.map(p => '🥅 ' + esc(p)).join('<br>')}` : ''}`
+      : `<div class="tip-title">No sign-ups yet</div>`;
+    return `<div class="summary-card">
+      <div class="tooltip">${tipContent}</div>
+      <div class="time-label">${esc(t.label)}</div>
+      <div class="loc-label">${mapLink(t.location)}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+        <span class="count-badge skater-badge">⛸ ${skaters.length} / ${MAX_SKATERS}</span>
+        <span class="count-badge goalie-badge">🥅 ${goalies.length} / ${MAX_GOALIES}</span>
+      </div>
+      <div class="player-list">
+        ${skaters.length ? skaters.map(p => '⛸ ' + esc(p)).join('<br>') : ''}
+        ${skaters.length && goalies.length ? '<br>' : ''}
+        ${goalies.length ? goalies.map(p => '🥅 ' + esc(p)).join('<br>') : ''}
+        ${!skaters.length && !goalies.length ? '<em>No sign-ups yet</em>' : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderAll() {
+  renderChips();
+  rebuildAllGrids();
+  renderResponses();
+  renderSummary();
+}
+
+// ─── ACTIONS ─────────────────────────────────────────────────────────────
+
+function addIceTime() {
+  const date   = document.getElementById('addDate').value;
+  const start  = resolveTime('addStart', 'addStartCustom');
+  const end    = resolveTime('addEnd',   'addEndCustom');
+  const locSel = document.getElementById('addLoc').value;
+  const loc    = locSel === 'custom' ? document.getElementById('addLocCustom').value.trim() : locSel;
+
+  if (!date)  { alert('Please select a date.'); return; }
+  if (!start || !end) return; // resolveTime already alerted
+  if (!loc)   { alert('Please enter a location.'); return; }
+  if (start >= end) { alert('End time must be after start time.'); return; }
+
+  const dow = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(date + 'T12:00:00').getDay()];
+  iceTimes.push({ label: buildLabel(dow, date, start, end), location: loc, start: buildICSDatetime(date, start), end: buildICSDatetime(date, end) });
+  iceTimes.sort((a, b) => a.start.localeCompare(b.start));
+  saveIceTimes();
+  document.getElementById('addDate').value = '';
+  renderAll();
+}
+
+// ─── EDIT MODAL ───────────────────────────────────────────────────────────
+let editingIdx = null;
+
+function openEdit(i) {
+  editingIdx = i;
+  const t         = iceTimes[i];
+  const startDt   = t.start;
+  const dateStr   = `${startDt.slice(0,4)}-${startDt.slice(4,6)}-${startDt.slice(6,8)}`;
+  const startTime = `${startDt.slice(9,11)}:${startDt.slice(11,13)}`;
+  const endTime   = `${t.end.slice(9,11)}:${t.end.slice(11,13)}`;
+  document.getElementById('editDate').value = dateStr;
+  populateTimeSelect('editStart', startTime);
+  populateTimeSelect('editEnd',   endTime);
+  const knownLocs = ['MN Made SLP – Blue Rink','MN Made SLP – Red Rink'];
+  if (knownLocs.includes(t.location)) {
+    document.getElementById('editLoc').value = t.location;
+    document.getElementById('editCustomLocWrap').style.display = 'none';
+  } else {
+    document.getElementById('editLoc').value = 'custom';
+    document.getElementById('editLocCustom').value = t.location;
+    document.getElementById('editCustomLocWrap').style.display = 'block';
+  }
+  document.getElementById('editModal').style.display = 'flex';
+}
+
+function closeEdit() {
+  document.getElementById('editModal').style.display = 'none';
+  editingIdx = null;
+}
+
+function saveEdit() {
+  if (editingIdx === null) return;
+  const date   = document.getElementById('editDate').value;
+  const start  = resolveTime('editStart', 'editStartCustom');
+  const end    = resolveTime('editEnd',   'editEndCustom');
+  const locSel = document.getElementById('editLoc').value;
+  const loc    = locSel === 'custom' ? document.getElementById('editLocCustom').value.trim() : locSel;
+  if (!date)  { alert('Please select a date.'); return; }
+  if (!start || !end) return;
+  if (!loc)   { alert('Please enter a location.'); return; }
+  if (start >= end) { alert('End time must be after start time.'); return; }
+  const dow = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(date + 'T12:00:00').getDay()];
+  const oldLabel = iceTimes[editingIdx].label;
+  const newLabel = buildLabel(dow, date, start, end);
+  iceTimes[editingIdx] = { label: newLabel, location: loc, start: buildICSDatetime(date, start), end: buildICSDatetime(date, end) };
+  iceTimes.sort((a, b) => a.start.localeCompare(b.start));
+  signups = signups.map(s => ({ ...s, times: s.times.map(t => t.label === oldLabel ? { ...t, label: newLabel, location: loc } : t) }));
+  saveIceTimes(); closeEdit(); renderAll();
+}
+
+function deleteEdit() {
+  if (editingIdx === null) return;
+  if (!confirm('Delete this session? Existing sign-ups for this slot will lose it.')) return;
+  removeTime(editingIdx);
+  closeEdit();
+}
+
+function removeTime(i) {
+  const lbl = iceTimes[i].label;
+  iceTimes.splice(i, 1);
+  signups = signups.map(s => ({ ...s, times: s.times.filter(t => t.label !== lbl) }));
+  saveIceTimes(); renderAll();
+}
+
+function renderChips() {
+  const c = document.getElementById('timeChips');
+  if (!iceTimes.length) { c.innerHTML = '<span class="no-times">No ice times added yet.</span>'; return; }
+  c.innerHTML = iceTimes.map((t, i) => `
+    <div class="time-chip" data-action="openEdit" data-idx="${i}">
+      <span>${esc(t.label)}</span>
+      <span class="loc">${mapLink(t.location)}</span>
+      <span style="opacity:0.5;font-size:0.75rem;margin-left:2px">✏️</span>
+    </div>`).join('');
+}
+
+function submitSignup() {
+  const email = document.getElementById('parentEmail').value.trim();
+  if (!email) { alert('Please enter your email address.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('Please enter a valid email address.'); return; }
+
+  const entries = [...document.getElementById('childrenList').querySelectorAll('.child-entry')];
+  if (!entries.length) { alert('Please add at least one player.'); return; }
+
+  for (const entry of entries) {
+    const nameEl = entry.querySelector('input[type="text"]');
+    if (!nameEl || !nameEl.value.trim()) { alert('Please enter a name for every player.'); return; }
+  }
+
+  // Per-slot role cap check
+  const overFull = [];
+  for (const entry of entries) {
+    const role = getSelectedRole(entry);
+    const max  = role === 'goalie' ? MAX_GOALIES : MAX_SKATERS;
+    [...entry.querySelectorAll('.times-grid input:checked')].forEach(c => {
+      const t = iceTimes[parseInt(c.value)];
+      if (slotCount(t.label, role) >= max) overFull.push(`${t.label} (${role}s full)`);
+    });
+  }
+  if (overFull.length) {
+    alert(`Sorry, the following are full:\n\n${[...new Set(overFull)].map(l => '• ' + l).join('\n')}\n\nPlease deselect and try again.`);
+    return;
+  }
+
+  // Build confirmation summary
+  const savedEntries = [];
+  for (const entry of entries) {
+    const player = entry.querySelector('input[type="text"]').value.trim();
+    const role   = getSelectedRole(entry);
+    const times  = [...entry.querySelectorAll('.times-grid input:checked')].map(c => iceTimes[parseInt(c.value)]);
+    savedEntries.push({ player, role, times });
+  }
+
+  // Save + ICS for each player
+  for (const { player, role, times } of savedEntries) {
+    const entry = { player, role, email, times, ts: new Date().toISOString() };
+    signups.push(entry);
+    saveSignup(entry);
+    downloadICS(player, times);
+  }
+
+  // Send confirmation email
+  const total   = savedEntries.reduce((n, e) => n + e.times.length, 0);
+  const dollars = total * PRICE_PER_SKATE;
+  sendConfirmationEmail(email, savedEntries, dollars);
+
+  // Build on-page confirmation
+  const confirmLines = savedEntries.map(({ player, role, times }) => {
+    const roleLabel = role === 'goalie' ? '🥅 Goalie' : '⛸ Skater';
+    const sessionList = times.length
+      ? times.map(t => `<li>${esc(t.label)}</li>`).join('')
+      : '<li>No sessions selected</li>';
+    return `<div class="confirm-player"><strong>${esc(player)}</strong> <span style="font-size:0.8rem;opacity:0.8">${roleLabel}</span><ul>${sessionList}</ul></div>`;
+  }).join('');
+
+  document.getElementById('confirmBody').innerHTML = `
+    ${confirmLines}
+    <div class="confirm-payment">💸 Total due: <strong>$${dollars}</strong> — Venmo <a href="https://venmo.com/u/yury21" target="_blank">@yury21</a></div>
+    <div class="confirm-ics">📅 Calendar invite(s) downloaded — open to add to your calendar.</div>`;
+  // Reset form first
+  document.getElementById('childrenList').innerHTML = '';
+  childCount = 0;
+  addChild();
+  document.getElementById('parentEmail').value = '';
+  document.getElementById('paymentBox').style.display = 'none';
+
+  // Show confirmation after reset
+  document.getElementById('confirmBox').style.display = 'block';
+  document.getElementById('confirmBox').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  renderResponses();
+  renderSummary();
+
+  // Hide confirm box after 20 seconds
+  setTimeout(() => document.getElementById('confirmBox').style.display = 'none', 20000);
+}
+
+function resendICS(i) { downloadICS(signups[i].player, signups[i].times); }
+
+function deleteSignup(i) {
+  if (!confirm('Remove this sign-up?')) return;
+  const ts = signups[i].ts;
+  signups.splice(i, 1);
+  deleteSignupRemote(ts);
+  renderAll();
+}
+
+function exportCSV() {
+  if (!signups.length) { alert('No sign-ups to export yet.'); return; }
+  const header = ['Player', 'Email', ...iceTimes.map(t => t.label)];
+  const rows   = signups.map(s => [s.player, s.email, ...iceTimes.map(t => s.times.some(x => x.label === t.label) ? 'Yes' : '')]);
+  const csv    = [header, ...rows].map(r => r.map(v => `"${(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a      = document.createElement('a');
+  a.href       = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download   = 'BubblrCup_Signups.csv';
+  a.click();
+}
+
+// ─── ADMIN AUTH ──────────────────────────────────────────────────────────
+function promptAdmin() {
+  const pw = prompt('Enter admin password:');
+  if (pw === 'hockey') {
+    document.getElementById('adminBar').style.display = 'flex';
+    document.getElementById('timesManager').style.display = 'block';
+    document.querySelector('.admin-link').style.display = 'none';
+    renderResponses();
+  } else if (pw !== null) {
+    alert('Incorrect password.');
+  }
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+populateTimeSelect('addStart', '07:00');
+populateTimeSelect('addEnd',   '08:00');
+renderAll();
+addChild();
+loadSignups();
+</script>
+</body>
+</html>
