@@ -519,8 +519,12 @@ async function loadSignups(rebuildGrids = false) {
     const data = await res.json();
     const incoming = data.signups || [];
     showDebug('Poll got ' + incoming.length + ' signups (local: ' + signups.length + ')');
-    if (incoming.length > 0 || signups.length === 0) {
+    // Never replace local signups with a smaller list from Sheets —
+    // the save may not have landed yet (especially on Safari)
+    if (incoming.length >= signups.length) {
       signups = incoming;
+    } else {
+      showDebug('Ignored poll — Sheets has fewer entries than local, save still pending');
     }
     const note = document.getElementById('syncNote');
     if (note) note.textContent = `✅ Live — last synced ${new Date().toLocaleTimeString()}`;
@@ -537,15 +541,52 @@ async function loadSignups(rebuildGrids = false) {
 
 async function saveSignup(entry) {
   if (SHEETS_URL === 'YOUR_APPS_SCRIPT_URL') return;
+
+  // First try a normal fetch
+  showDebug('Saving to Sheets...');
   try {
-    const url = `${SHEETS_URL}?action=add&entry=${encodeURIComponent(JSON.stringify(entry))}`;
-    showDebug('Saving to Sheets...');
-    const res = await fetch(url, { mode: 'cors' });
-    const data = await res.json();
-    showDebug('Sheets save: ' + JSON.stringify(data));
-  } catch (err) {
-    showDebug('Sheets save ERROR: ' + err.message);
-    console.warn('Could not save signup:', err);
+    const res = await fetch(SHEETS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'add', entry }),
+    });
+    showDebug('Sheets POST sent (no-cors)');
+  } catch(err) {
+    showDebug('POST failed: ' + err.message);
+  }
+
+  // Also fire via hidden iframe form — bypasses Safari CORS completely
+  try {
+    const iframeId = 'saveFrame_' + Date.now();
+    const iframe = document.createElement('iframe');
+    iframe.name = iframeId;
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = SHEETS_URL;
+    form.target = iframeId;
+    form.style.display = 'none';
+
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'payload';
+    input.value = JSON.stringify({ action: 'add', entry });
+    form.appendChild(input);
+
+    document.body.appendChild(form);
+    form.submit();
+    showDebug('Iframe form submitted');
+
+    // Clean up after a few seconds
+    setTimeout(() => {
+      document.body.removeChild(form);
+      document.body.removeChild(iframe);
+    }, 5000);
+  } catch(err) {
+    showDebug('Iframe save ERROR: ' + err.message);
   }
 }
 
