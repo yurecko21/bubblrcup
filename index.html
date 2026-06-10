@@ -948,14 +948,33 @@ function makeICS(playerName, slots) {
     'BEGIN:VEVENT',
     `UID:bubblr-${stamp}-${i}@hockeycamp`,
     `DTSTAMP:${stamp}`,
-    `DTSTART:${s.start}`,
-    `DTEND:${s.end}`,
+    `DTSTART;TZID=America/Chicago:${s.start}`,
+    `DTEND;TZID=America/Chicago:${s.end}`,
     `SUMMARY:12U BUBBL'R Cup Series – ${playerName}`,
     `LOCATION:${s.location}`,
     `DESCRIPTION:Session for ${playerName}.\\nLocation: ${s.location}`,
     'END:VEVENT'
   ].join('\r\n'));
-  return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//BubblrCup//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH',...events,'END:VCALENDAR'].join('\r\n');
+  const tz = [
+    'BEGIN:VTIMEZONE',
+    'TZID:America/Chicago',
+    'BEGIN:STANDARD',
+    'TZNAME:CST',
+    'DTSTART:19701101T020000',
+    'RRULE:FREQ=YEARLY;BYDAY=1SU;BYMONTH=11',
+    'TZOFFSETFROM:-0500',
+    'TZOFFSETTO:-0600',
+    'END:STANDARD',
+    'BEGIN:DAYLIGHT',
+    'TZNAME:CDT',
+    'DTSTART:19700308T020000',
+    'RRULE:FREQ=YEARLY;BYDAY=2SU;BYMONTH=3',
+    'TZOFFSETFROM:-0600',
+    'TZOFFSETTO:-0500',
+    'END:DAYLIGHT',
+    'END:VTIMEZONE',
+  ].join('\r\n');
+  return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//BubblrCup//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH', tz, ...events,'END:VCALENDAR'].join('\r\n');
 }
 
 function downloadICS(playerName, slots) {
@@ -1119,7 +1138,10 @@ function renderChips() {
     </div>`).join('');
 }
 
+let isSubmitting = false;
+
 function submitSignup() {
+  if (isSubmitting) return;
   const email = document.getElementById('parentEmail').value.trim();
   if (!email) { alert('Please enter your email address.'); return; }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('Please enter a valid email address.'); return; }
@@ -1167,6 +1189,11 @@ function submitSignup() {
     saveSignup(entry);
     downloadICS(player, times);
   }
+
+  // Lock submission to prevent double-tap
+  isSubmitting = true;
+  const submitBtn = document.querySelector('.btn-submit');
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '⏳ Submitting…'; }
 
   // Pause polling briefly so Sheets has time to save before next load
   lastSuccessfulSync = Date.now();
