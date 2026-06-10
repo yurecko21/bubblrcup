@@ -486,18 +486,42 @@ const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxpA_qxCeCBVYHDaJHsW
 // ─── DATA ────────────────────────────────────────────────────────────────
 const DEFAULT_TIMES = [
   { label: "Sat, Jun 13 · 11:10 AM – 12:30 PM", location: "MN Made SLP – Blue Rink", start: "20260613T111000", end: "20260613T123000" },
-  { label: "Mon, Jun 15 · 6:30 – 7:50 PM",      location: "MN Made SLP – Blue Rink", start: "20260615T183000", end: "20260615T195000" },
+  { label: "Mon, Jun 15 · 6:30 – 7:30 PM",      location: "MN Made SLP – Blue Rink", start: "20260615T183000", end: "20260615T193000" },
   { label: "Fri, Jun 19 · 5:30 – 6:50 PM",      location: "MN Made SLP – Blue Rink", start: "20260619T173000", end: "20260619T185000" },
   { label: "Sat, Jun 27 · 1:00 – 2:20 PM",      location: "MN Made SLP – Blue Rink", start: "20260627T130000", end: "20260627T142000" },
 ];
 
-let iceTimes  = JSON.parse(localStorage.getItem('hc_times4') || 'null') || DEFAULT_TIMES.map(t => ({...t}));
+let iceTimes  = JSON.parse(localStorage.getItem('hc_times5') || 'null') || DEFAULT_TIMES.map(t => ({...t}));
 iceTimes.sort((a, b) => a.start.localeCompare(b.start));
 let signups   = [];
 let childCount = 0;
 
 function saveIceTimes() {
-  localStorage.setItem('hc_times4', JSON.stringify(iceTimes));
+  localStorage.setItem('hc_times5', JSON.stringify(iceTimes));
+  // Also persist to Sheets so all devices stay in sync
+  if (SHEETS_URL !== 'YOUR_APPS_SCRIPT_URL') {
+    const url = `${SHEETS_URL}?action=saveTimes&times=${encodeURIComponent(JSON.stringify(iceTimes))}`;
+    fetch(url, { mode: 'no-cors' }).catch(() => {});
+    // iframe fallback for Safari
+    const iframeId = 'timesFrame_' + Date.now();
+    const iframe = document.createElement('iframe');
+    iframe.name = iframeId;
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = SHEETS_URL;
+    form.target = iframeId;
+    form.style.display = 'none';
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'payload';
+    input.value = JSON.stringify({ action: 'saveTimes', times: iceTimes });
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+    setTimeout(() => { document.body.removeChild(form); document.body.removeChild(iframe); }, 5000);
+  }
 }
 
 // ─── GOOGLE SHEETS SYNC ──────────────────────────────────────────────────
@@ -517,6 +541,12 @@ async function loadSignups(rebuildGrids = false) {
     showDebug('Polling Sheets...');
     const res  = await fetch(`${SHEETS_URL}?action=get`, { mode: 'cors' });
     const data = await res.json();
+    // Sync ice times from Sheets if available — single source of truth
+    if (data.times && data.times.length > 0) {
+      iceTimes = data.times;
+      localStorage.setItem('hc_times5', JSON.stringify(iceTimes));
+      showDebug('Times synced from Sheets: ' + iceTimes.length);
+    }
     const incoming = data.signups || [];
     showDebug('Poll got ' + incoming.length + ' signups (local: ' + signups.length + ')');
     if (incoming.length >= signups.length) {
