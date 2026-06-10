@@ -519,10 +519,12 @@ async function loadSignups(rebuildGrids = false) {
     const data = await res.json();
     const incoming = data.signups || [];
     showDebug('Poll got ' + incoming.length + ' signups (local: ' + signups.length + ')');
-    // Never replace local signups with a smaller list from Sheets —
-    // the save may not have landed yet (especially on Safari)
     if (incoming.length >= signups.length) {
-      signups = incoming;
+      // Merge: keep any local entries not yet in Sheets (Safari saves still pending)
+      const sheetsTs = new Set(incoming.map(s => s.ts));
+      const localOnly = signups.filter(s => !sheetsTs.has(s.ts));
+      signups = [...incoming, ...localOnly];
+      showDebug('Merged: ' + incoming.length + ' from Sheets + ' + localOnly.length + ' local-only');
     } else {
       showDebug('Ignored poll — Sheets has fewer entries than local, save still pending');
     }
@@ -1182,6 +1184,11 @@ function submitSignup() {
   const total   = savedEntries.reduce((n, e) => n + e.times.length, 0);
   const dollars = total * PRICE_PER_SKATE;
 
+  // Lock submission immediately to prevent double-tap
+  isSubmitting = true;
+  const submitBtn = document.querySelector('.btn-submit');
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '⏳ Submitting…'; }
+
   // Save + ICS for each player
   for (const { player, role, times } of savedEntries) {
     const entry = { player, role, email, times, ts: new Date().toISOString() };
@@ -1189,11 +1196,6 @@ function submitSignup() {
     saveSignup(entry);
     downloadICS(player, times);
   }
-
-  // Lock submission to prevent double-tap
-  isSubmitting = true;
-  const submitBtn = document.querySelector('.btn-submit');
-  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '⏳ Submitting…'; }
 
   // Pause polling briefly so Sheets has time to save before next load
   lastSuccessfulSync = Date.now();
