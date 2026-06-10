@@ -454,6 +454,7 @@
         <button class="btn-export" data-action="exportCSV">⬇ Export CSV</button>
       </div>
       <p class="local-note" id="syncNote">🔄 Loading registrations...</p>
+      <div id="debugBox" style="display:none;background:#1a1a2e;color:#00ff88;font-family:monospace;font-size:0.75rem;padding:10px 14px;border-radius:8px;margin-bottom:12px;max-height:160px;overflow-y:auto;white-space:pre-wrap;"></div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Player</th><th>Email</th><th>Sessions</th><th></th></tr></thead>
@@ -508,13 +509,16 @@ async function loadSignups(rebuildGrids = false) {
     if (note) note.textContent = '⚠️ Google Sheets not connected yet — add your Apps Script URL to enable live sync.';
     return;
   }
-  // Don't poll within 5 seconds of a submission — give Sheets time to save first
-  if (Date.now() - lastSuccessfulSync < 5000) return;
+  if (Date.now() - lastSuccessfulSync < 5000) {
+    showDebug('Skipping poll — too soon after submit');
+    return;
+  }
   try {
+    showDebug('Polling Sheets...');
     const res  = await fetch(`${SHEETS_URL}?action=get`, { mode: 'cors' });
     const data = await res.json();
     const incoming = data.signups || [];
-    // Only replace local signups if Sheets returned data, OR local list is already empty
+    showDebug('Poll got ' + incoming.length + ' signups (local: ' + signups.length + ')');
     if (incoming.length > 0 || signups.length === 0) {
       signups = incoming;
     }
@@ -524,6 +528,7 @@ async function loadSignups(rebuildGrids = false) {
     renderSummary();
     if (rebuildGrids) rebuildAllGrids();
   } catch (err) {
+    showDebug('Poll ERROR: ' + err.message);
     console.warn('Could not load signups:', err);
     const note = document.getElementById('syncNote');
     if (note) note.textContent = '⚠️ Could not connect to Google Sheets. Check your URL.';
@@ -534,8 +539,12 @@ async function saveSignup(entry) {
   if (SHEETS_URL === 'YOUR_APPS_SCRIPT_URL') return;
   try {
     const url = `${SHEETS_URL}?action=add&entry=${encodeURIComponent(JSON.stringify(entry))}`;
-    await fetch(url, { mode: 'no-cors' });
+    showDebug('Saving to Sheets...');
+    const res = await fetch(url, { mode: 'cors' });
+    const data = await res.json();
+    showDebug('Sheets save: ' + JSON.stringify(data));
   } catch (err) {
+    showDebug('Sheets save ERROR: ' + err.message);
     console.warn('Could not save signup:', err);
   }
 }
@@ -1234,6 +1243,18 @@ function promptAdmin() {
   } else if (pw !== null) {
     alert('Incorrect password.');
   }
+}
+
+// ─── DEBUG ───────────────────────────────────────────────────────────────────
+const debugLines = [];
+function showDebug(msg) {
+  const box = document.getElementById('debugBox');
+  if (!box) return;
+  box.style.display = 'block';
+  debugLines.push(new Date().toLocaleTimeString() + ' ' + msg);
+  if (debugLines.length > 20) debugLines.shift();
+  box.textContent = debugLines.join('\n');
+  box.scrollTop = box.scrollHeight;
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────
