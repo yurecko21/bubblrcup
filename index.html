@@ -571,54 +571,57 @@ async function loadSignups(rebuildGrids = false) {
   }
 }
 
+const isSafariBrowser = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
 async function saveSignup(entry) {
   if (SHEETS_URL === 'YOUR_APPS_SCRIPT_URL') return;
+  showDebug('Saving to Sheets... (Safari: ' + isSafariBrowser + ')');
 
-  // First try a normal fetch
-  showDebug('Saving to Sheets...');
-  try {
-    const res = await fetch(SHEETS_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'add', entry }),
-    });
-    showDebug('Sheets POST sent (no-cors)');
-  } catch(err) {
-    showDebug('POST failed: ' + err.message);
-  }
+  if (isSafariBrowser) {
+    // Safari: fetch POST is blocked by CORS — use iframe form instead
+    try {
+      const iframeId = 'saveFrame_' + Date.now();
+      const iframe = document.createElement('iframe');
+      iframe.name = iframeId;
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
 
-  // Also fire via hidden iframe form — bypasses Safari CORS completely
-  try {
-    const iframeId = 'saveFrame_' + Date.now();
-    const iframe = document.createElement('iframe');
-    iframe.name = iframeId;
-    iframe.style.display = 'none';
-    document.body.appendChild(iframe);
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = SHEETS_URL;
+      form.target = iframeId;
+      form.style.display = 'none';
 
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = SHEETS_URL;
-    form.target = iframeId;
-    form.style.display = 'none';
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'payload';
+      input.value = JSON.stringify({ action: 'add', entry });
+      form.appendChild(input);
 
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'payload';
-    input.value = JSON.stringify({ action: 'add', entry });
-    form.appendChild(input);
+      document.body.appendChild(form);
+      form.submit();
+      showDebug('Iframe form submitted');
 
-    document.body.appendChild(form);
-    form.submit();
-    showDebug('Iframe form submitted');
-
-    // Clean up after a few seconds
-    setTimeout(() => {
-      document.body.removeChild(form);
-      document.body.removeChild(iframe);
-    }, 5000);
-  } catch(err) {
-    showDebug('Iframe save ERROR: ' + err.message);
+      setTimeout(() => {
+        document.body.removeChild(form);
+        document.body.removeChild(iframe);
+      }, 5000);
+    } catch(err) {
+      showDebug('Iframe save ERROR: ' + err.message);
+    }
+  } else {
+    // Desktop: standard fetch POST works fine
+    try {
+      await fetch(SHEETS_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'add', entry }),
+      });
+      showDebug('Sheets POST sent');
+    } catch(err) {
+      showDebug('POST failed: ' + err.message);
+    }
   }
 }
 
@@ -743,7 +746,13 @@ function getSelectedRole(entry) {
 function makeTimesGridHTML(childIdx, role) {
   role = role || 'skater';
   if (!iceTimes.length) return '<p class="no-times-msg">No ice times have been added yet.</p>';
-  return iceTimes.map((t, i) => {
+  const now = new Date();
+  return iceTimes.filter(t => {
+    if (IS_ADMIN) return true; // admin sees all dates
+    const y = t.start.slice(0,4), mo = t.start.slice(4,6)-1, d = t.start.slice(6,8);
+    const hr = t.start.slice(9,11), mn = t.start.slice(11,13);
+    return new Date(y, mo, d, hr, mn) > now;
+  }).map((t, i) => {
     const skatersTaken    = slotCount(t.label, 'skater');
     const goaliesTaken    = slotCount(t.label, 'goalie');
     const skatersLeft     = MAX_SKATERS - skatersTaken;
@@ -1041,7 +1050,9 @@ function renderResponses() {
 function renderSummary() {
   const g = document.getElementById('summaryGrid');
   if (!iceTimes.length) { g.innerHTML = '<p style="color:var(--gray);font-size:.9rem;font-style:italic">Add ice times to see the summary.</p>'; return; }
-  g.innerHTML = iceTimes.map(t => {
+  const now = new Date();
+  const futureTimes = iceTimes.filter(t => { if (IS_ADMIN) return true; const y=t.start.slice(0,4),mo=t.start.slice(4,6)-1,d=t.start.slice(6,8),hr=t.start.slice(9,11),mn=t.start.slice(11,13); return new Date(y,mo,d,hr,mn)>now; });
+  g.innerHTML = futureTimes.map(t => {
     const skaters = signups.filter(s => (s.role||'skater') === 'skater' && s.times.some(x => x.label === t.label)).map(s => s.player);
     const goalies = signups.filter(s => s.role === 'goalie' && s.times.some(x => x.label === t.label)).map(s => s.player);
     const tipContent = (skaters.length || goalies.length)
