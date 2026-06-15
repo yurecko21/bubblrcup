@@ -747,12 +747,12 @@ function makeTimesGridHTML(childIdx, role) {
   role = role || 'skater';
   if (!iceTimes.length) return '<p class="no-times-msg">No ice times have been added yet.</p>';
   const now = new Date();
-  return iceTimes.filter(t => {
+  return iceTimes.map((t, originalIdx) => ({ t, originalIdx })).filter(({ t }) => {
     if (IS_ADMIN) return true; // admin sees all dates
     const y = t.start.slice(0,4), mo = t.start.slice(4,6)-1, d = t.start.slice(6,8);
     const hr = t.start.slice(9,11), mn = t.start.slice(11,13);
     return new Date(y, mo, d, hr, mn) > now;
-  }).map((t, i) => {
+  }).map(({ t, originalIdx }, i) => {
     const skatersTaken    = slotCount(t.label, 'skater');
     const goaliesTaken    = slotCount(t.label, 'goalie');
     const skatersLeft     = MAX_SKATERS - skatersTaken;
@@ -769,8 +769,8 @@ function makeTimesGridHTML(childIdx, role) {
     const gst = goaliesFull ? '🔒 Goalies Full' : `${goaliesLeft} goalie${goaliesLeft !== 1 ? 's' : ''} left`;
 
     return `<div class="time-option${disabledForRole ? ' slot-full' : ''}">
-      <input type="checkbox" id="c${childIdx}_t${i}" value="${i}"${disabledForRole ? ' disabled' : ''}>
-      <label for="c${childIdx}_t${i}">
+      <input type="checkbox" id="c${childIdx}_t${originalIdx}" value="${originalIdx}"${disabledForRole ? ' disabled' : ''}>
+      <label for="c${childIdx}_t${originalIdx}">
         <span class="slot-top">${esc(t.label)}</span>
         <span class="slot-badges">
           <span class="${ssc}">${sst}</span>
